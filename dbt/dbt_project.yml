@@ -1,0 +1,21 @@
+name: company_data_quality
+version: "1.0.0"
+config-version: 2
+
+profile: company_data_quality
+
+model-paths: ["models"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+test-paths: ["tests"]
+target-path: "target"
+clean-targets: ["target", "dbt_packages"]
+
+models:
+  company_data_quality:
+    staging:
+      +materialized: view
+      +schema: staging
+    final:
+      +materialized: table
+      +schema: final

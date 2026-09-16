@@ -1,0 +1,18 @@
+version: 2
+
+sources:
+  - name: raw
+    description: Files landed by the ingest stage, untyped and uncast.
+    schema: raw
+    tables:
+      - name: crm_export
+      - name: registry_extract
+      - name: naics_crosswalk
+
+  - name: intermediate
+    description: Output of the Python normalisation and entity resolution stages.
+    schema: intermediate
+    tables:
+      - name: normalised_records
+      - name: entity_clusters
+      - name: match_pairs

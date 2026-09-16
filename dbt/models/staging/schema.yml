@@ -1,0 +1,29 @@
+version: 2
+
+models:
+  - name: stg_records
+    description: Source records joined to their normalised fields and cluster id.
+    columns:
+      - name: record_id
+        description: Primary key from the originating system.
+        tests: [unique, not_null]
+      - name: source_system
+        tests:
+          - accepted_values:
+              values: ["crm_export", "registry_extract"]
+      - name: naics_status
+        tests:
+          - accepted_values:
+              values: ["unchanged", "remapped", "retired", "unknown"]
+
+  - name: stg_naics_crosswalk
+    description: One row per 2012 NAICS code.
+    columns:
+      - name: code_2012
+        tests: [unique, not_null]
+
+  - name: stg_naics_2022
+    description: One row per 2022 NAICS code, for joins on the current vintage.
+    columns:
+      - name: code_2022
+        tests: [unique, not_null]

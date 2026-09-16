@@ -1,0 +1,28 @@
+version: 2
+
+models:
+  - name: dim_company
+    description: One row per resolved company after entity resolution.
+    columns:
+      - name: company_key
+        description: Cluster id assigned by the resolution stage.
+        tests: [unique, not_null]
+      - name: company_name
+        tests: [not_null]
+      - name: source_record_count
+        description: How many source records collapsed into this company.
+        tests: [not_null]
+
+  - name: fct_record_quality
+    description: One row per record and check.
+    columns:
+      - name: passed
+        tests:
+          - accepted_values:
+              values: [0, 1]
+
+  - name: rpt_quality_scorecard
+    description: Pass rate by source system, field and quality dimension.
+    columns:
+      - name: pass_rate_pct
+        tests: [not_null]
