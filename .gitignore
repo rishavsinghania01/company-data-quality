@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+warehouse/
+dbt/target/
+dbt/logs/
+dbt/dbt_packages/
+.pytest_cache/
+.DS_Store
+*.duckdb
+logs/
+dbt/.user.yml
