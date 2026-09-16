@@ -1,26 +1,82 @@
-# Local Airflow for running the DAG. Everything the pipeline needs is in the
-# image plus this project mounted at /opt/airflow/project, so there is no
-# external database to provision.
+# Local Airflow for running the DAG.
+#
+# LocalExecutor runs tasks in parallel subprocesses, and that needs a metadata
+# database that can take concurrent connections. SQLite cannot, and Airflow
+# refuses to start the scheduler on that combination, so Airflow's own state
+# lives in Postgres. The pipeline's warehouse is unaffected: it is still the
+# DuckDB file in the mounted project folder, and Postgres holds nothing but
+# Airflow's task history.
+#
+#   docker compose up          Airflow at http://localhost:8080, admin / admin
+#   docker compose down -v     also drops the metadata volume
+
+x-airflow-common: &airflow-common
+  build: .
+  image: company-data-quality/airflow:2.10.4
+  user: "${AIRFLOW_UID:-50000}:0"
+  environment:
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+    AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+    AIRFLOW__CORE__DAGS_FOLDER: /opt/airflow/project/dags
+    CDQ_ROOT: /opt/airflow/project
+    CDQ_WAREHOUSE: /opt/airflow/project/warehouse/cdq.duckdb
+    DBT_PROFILES_DIR: /opt/airflow/project/dbt
+    PYTHONPATH: /opt/airflow/project/src
+  volumes:
+    - ./:/opt/airflow/project
+  depends_on:
+    postgres:
+      condition: service_healthy
 
 services:
-  airflow:
-    image: apache/airflow:2.10.4-python3.11
+  postgres:
+    image: postgres:16
     environment:
-      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
-      AIRFLOW__CORE__EXECUTOR: LocalExecutor
-      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: sqlite:////opt/airflow/airflow.db
-      AIRFLOW__CORE__DAGS_FOLDER: /opt/airflow/project/dags
-      CDQ_ROOT: /opt/airflow/project
-      CDQ_WAREHOUSE: /opt/airflow/project/warehouse/cdq.duckdb
-      DBT_PROFILES_DIR: /opt/airflow/project/dbt
-      PYTHONPATH: /opt/airflow/project/src
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
     volumes:
-      - ./:/opt/airflow/project
+      - airflow-metadata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Runs once: applies the schema migrations and creates the admin login,
+  # then exits. The webserver and scheduler wait for it to finish.
+  airflow-init:
+    <<: *airflow-common
+    command: >
+      bash -c "airflow db migrate &&
+               airflow users create --username admin --password admin
+                 --firstname admin --lastname admin --role Admin --email admin@example.com || true"
+
+  airflow-webserver:
+    <<: *airflow-common
+    command: webserver
     ports:
       - "8080:8080"
-    command: >
-      bash -c "pip install --no-cache-dir -r /opt/airflow/project/requirements.txt &&
-               airflow db migrate &&
-               airflow users create --username admin --password admin
-                 --firstname admin --lastname admin --role Admin --email admin@example.com || true &&
-               airflow standalone"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      airflow-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  airflow-scheduler:
+    <<: *airflow-common
+    command: scheduler
+    depends_on:
+      postgres:
+        condition: service_healthy
+      airflow-init:
+        condition: service_completed_successfully
+
+volumes:
+  airflow-metadata:

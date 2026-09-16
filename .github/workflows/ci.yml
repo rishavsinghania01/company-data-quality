@@ -63,3 +63,22 @@ jobs:
               print(f"{'OK ' if got == want else 'BAD'}  {k:38} {got:>6}  (README says {want})")
           assert not bad, f"README numbers no longer match the pipeline: {bad}"
           EOF
+
+  airflow:
+    name: Airflow image builds, DAG imports inside it
+    runs-on: ubuntu-latest
+    env:
+      AIRFLOW_UID: "1001"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: The compose file is valid
+        run: docker compose config --quiet
+
+      - name: Build the Airflow image with the project's dependencies installed
+        run: docker compose build airflow-scheduler
+
+      - name: The DAG parses inside that image and chains the stages in order
+        run: >
+          docker compose run --rm --no-deps -T --entrypoint python airflow-scheduler
+          -m pytest /opt/airflow/project/tests/test_dag.py -q -p no:cacheprovider

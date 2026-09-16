@@ -1,0 +1,11 @@
+# Only requirements.txt is copied into the image; the project itself is bind
+# mounted at run time. Keep the build context small.
+.git
+.venv
+venv
+warehouse
+dbt/target
+dbt/logs
+dbt/dbt_packages
+**/__pycache__
+.pytest_cache
