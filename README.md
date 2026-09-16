@@ -1,5 +1,7 @@
 # Company data quality pipeline
 
+[![CI](https://github.com/rishavsinghania01/company-data-quality/actions/workflows/ci.yml/badge.svg)](https://github.com/rishavsinghania01/company-data-quality/actions/workflows/ci.yml)
+
 An Airflow pipeline that takes company records from two source systems, cleans
 the fields, works out which records describe the same company, loads the result
 into a warehouse with dbt, and publishes a quality scorecard.
@@ -24,11 +26,14 @@ From 3,380 source records across the two systems:
 | Largest cluster | 3 records |
 | NAICS codes remapped from 2012 to 2022 | 471 |
 | NAICS codes not found in either vintage | 139 |
-| Phone numbers failing validation | 526 |
+| Phone numbers present but too short to be valid | 526 |
+| Phone numbers missing entirely | 137 |
+
+Every number in this table is asserted by CI on each push, against the warehouse the pipeline just built — if the code drifts from the README, the build goes red.
 
 Quality scorecard, which is the table a human reads:
 
-| source_system | field | dimension | checked | passed | pass_rate_pct |
+| source_system | field | dimension | records_checked | records_passed | pass_rate_pct |
 |---|---|---|---|---|---|
 | crm_export | name | completeness | 1736 | 1736 | 100.00 |
 | crm_export | phone | validity | 1736 | 1394 | 80.30 |

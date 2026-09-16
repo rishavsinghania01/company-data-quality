@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  pipeline:
+    name: tests, pipeline, dbt build, README numbers
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install
+        run: pip install -r requirements.txt
+
+      - name: Unit tests
+        run: python -m pytest -q
+
+      - name: Run the pipeline end to end
+        run: PYTHONPATH=src python -m cdq.cli all
+
+      - name: Build and test the warehouse models
+        working-directory: dbt
+        env:
+          DBT_PROFILES_DIR: .
+        run: dbt build --no-use-colors
+
+      - name: The numbers in the README are the numbers the pipeline produces
+        run: |
+          python - <<'EOF'
+          import duckdb
+          c = duckdb.connect("warehouse/cdq.duckdb", read_only=True)
+          q = lambda sql: c.execute(sql).fetchone()[0]
+          expected = {
+              "source records":                  (q("select count(*) from intermediate.normalised_records"), 3380),
+              "distinct companies":              (q("select count(distinct cluster_id) from intermediate.entity_clusters"), 2292),
+              "clusters with more than one record": (q("select count(*) from (select 1 from intermediate.entity_clusters group by cluster_id having count(*) > 1)"), 1001),
+              "largest cluster":                 (q("select max(n) from (select count(*) n from intermediate.entity_clusters group by cluster_id)"), 3),
+              "NAICS remapped 2012 to 2022":     (q("select count(*) from intermediate.normalised_records where naics_status = 'remapped'"), 471),
+              "NAICS unknown":                   (q("select count(*) from intermediate.normalised_records where naics_status = 'unknown'"), 139),
+              "phone numbers too short":         (q("select count(*) from intermediate.normalised_records where phone_status = 'too_short'"), 526),
+              "phone numbers missing":           (q("select count(*) from intermediate.normalised_records where phone_status = 'empty'"), 137),
+              "dim_company rows":                (q("select count(*) from main_final.dim_company"), 2292),
+          }
+          bad = {k: v for k, v in expected.items() if v[0] != v[1]}
+          for k, (got, want) in expected.items():
+              print(f"{'OK ' if got == want else 'BAD'}  {k:38} {got:>6}  (README says {want})")
+          assert not bad, f"README numbers no longer match the pipeline: {bad}"
+          EOF
