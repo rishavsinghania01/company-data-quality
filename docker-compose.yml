@@ -1,0 +1,26 @@
+# Local Airflow for running the DAG. Everything the pipeline needs is in the
+# image plus this project mounted at /opt/airflow/project, so there is no
+# external database to provision.
+
+services:
+  airflow:
+    image: apache/airflow:2.10.4-python3.11
+    environment:
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: sqlite:////opt/airflow/airflow.db
+      AIRFLOW__CORE__DAGS_FOLDER: /opt/airflow/project/dags
+      CDQ_ROOT: /opt/airflow/project
+      CDQ_WAREHOUSE: /opt/airflow/project/warehouse/cdq.duckdb
+      DBT_PROFILES_DIR: /opt/airflow/project/dbt
+      PYTHONPATH: /opt/airflow/project/src
+    volumes:
+      - ./:/opt/airflow/project
+    ports:
+      - "8080:8080"
+    command: >
+      bash -c "pip install --no-cache-dir -r /opt/airflow/project/requirements.txt &&
+               airflow db migrate &&
+               airflow users create --username admin --password admin
+                 --firstname admin --lastname admin --role Admin --email admin@example.com || true &&
+               airflow standalone"
