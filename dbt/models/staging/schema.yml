@@ -14,13 +14,22 @@ models:
       - name: naics_status
         tests:
           - accepted_values:
-              values: ["unchanged", "remapped", "retired", "unknown"]
+              values: ["unchanged", "remapped", "ambiguous_split", "retired", "unknown"]
+      - name: naics_candidates
+        description: >
+          Comma separated 2022 codes when naics_status is ambiguous_split,
+          otherwise null. Present so a reviewer can pick, not so the model can.
 
   - name: stg_naics_crosswalk
-    description: One row per 2012 NAICS code.
+    description: >
+      One row per (2012 code, 2022 code) pair in the published concordance.
+      A 2012 code with target_count > 1 was split and cannot be mapped from
+      the record alone.
     columns:
-      - name: code_2012
+      - name: mapping_key
         tests: [unique, not_null]
+      - name: code_2012
+        tests: [not_null]
 
   - name: stg_naics_2022
     description: One row per 2022 NAICS code, for joins on the current vintage.

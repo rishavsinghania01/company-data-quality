@@ -24,7 +24,8 @@ From 3,380 source records across the two systems:
 | Distinct companies after resolution | 2,028 |
 | Clusters holding more than one record | 1,232 |
 | Largest cluster | 3 records |
-| NAICS codes remapped from 2012 to 2022 | 471 |
+| NAICS codes remapped from 2012 to 2022 | 459 |
+| NAICS codes on a 2012 industry that was split, so not mappable from the record alone | 12 |
 | NAICS codes not found in either vintage | 139 |
 | Phone numbers present but too short to be valid | 526 |
 | Phone numbers missing entirely | 137 |
@@ -38,11 +39,11 @@ Quality scorecard, which is the table a human reads:
 | crm_export | name | completeness | 1736 | 1736 | 100.00 |
 | crm_export | phone | validity | 1736 | 1394 | 80.30 |
 | crm_export | address | completeness | 1736 | 1652 | 95.16 |
-| crm_export | naics | validity | 1736 | 1665 | 95.91 |
+| crm_export | naics | validity | 1736 | 1659 | 95.56 |
 | registry_extract | name | completeness | 1644 | 1644 | 100.00 |
 | registry_extract | phone | validity | 1644 | 1323 | 80.47 |
 | registry_extract | address | completeness | 1644 | 1578 | 95.99 |
-| registry_extract | naics | validity | 1644 | 1576 | 95.86 |
+| registry_extract | naics | validity | 1644 | 1570 | 95.50 |
 
 Whole run takes about eight seconds on a laptop.
 

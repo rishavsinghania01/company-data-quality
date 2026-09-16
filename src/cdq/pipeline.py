@@ -62,7 +62,8 @@ def normalise_records(settings: Settings) -> int:
                 state_code       VARCHAR,
                 naics_raw        VARCHAR,
                 naics_2022       VARCHAR,
-                naics_status     VARCHAR
+                naics_status     VARCHAR,
+                naics_candidates VARCHAR
             )
             """
         )
@@ -100,11 +101,12 @@ def normalise_records(settings: Settings) -> int:
                         naics,
                         mapped.code_2022,
                         mapped.status,
+                        ",".join(mapped.candidates) or None,
                     )
                 )
 
         connection.executemany(
-            "INSERT INTO intermediate.normalised_records VALUES (" + ",".join(["?"] * 17) + ")",
+            "INSERT INTO intermediate.normalised_records VALUES (" + ",".join(["?"] * 18) + ")",
             rows,
         )
         return len(rows)

@@ -30,7 +30,8 @@ select
     normalised.state_code,
     normalised.naics_raw,
     normalised.naics_2022,
-    normalised.naics_status
+    normalised.naics_status,
+    normalised.naics_candidates
 from normalised
 left join clustered
     on normalised.record_id = clustered.record_id
