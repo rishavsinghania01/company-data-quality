@@ -84,11 +84,12 @@ jobs:
       # CONNECTION_CHECK_MAX_COUNT=0 stops the image's entrypoint waiting for the
       # metadata database, which is not started here (--no-deps). Neither check
       # needs it: one runs dbt --version from its own virtualenv, the other
-      # imports the DAG file.
+      # imports the DAG file. The entrypoint treats any command other than
+      # `bash` or `python` as an airflow subcommand, hence `bash -c`.
       - name: dbt runs from its own virtualenv inside the image
         run: >
           docker compose run --rm --no-deps -T -e CONNECTION_CHECK_MAX_COUNT=0
-          airflow-scheduler /opt/airflow/dbt-venv/bin/dbt --version
+          airflow-scheduler bash -c '"$CDQ_DBT_BIN" --version'
 
       - name: The DAG parses inside that image and chains the stages in order
         run: >
