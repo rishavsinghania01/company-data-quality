@@ -36,3 +36,14 @@ def test_the_dag_imports_and_chains_the_stages_in_order():
         assert downstream in dag.get_task(upstream).downstream_task_ids, (upstream, downstream)
     assert dag.get_task("generate_sources").upstream_task_ids == set()
     assert dag.get_task("quality_report").downstream_task_ids == set()
+
+
+def test_dbt_runs_from_the_binary_the_environment_points_at():
+    # Inside the image CDQ_DBT_BIN is the virtualenv dbt; locally it is plain "dbt".
+    sys.path.insert(0, DAGS_DIR)
+    import company_quality_pipeline as module
+
+    command = module.dag.get_task("dbt_build").bash_command
+    expected_bin = os.environ.get("CDQ_DBT_BIN", "dbt")
+    assert f"{expected_bin} build" in command
+    assert command.startswith(f"cd {module.DBT_DIR} && ")

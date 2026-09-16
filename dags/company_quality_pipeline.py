@@ -6,9 +6,11 @@ build and test the warehouse models with dbt, then publish the quality
 report. The Python stages call the same functions the CLI calls, so a local
 `make run` and a scheduled run execute identical code.
 
-The dbt steps are BashOperator rather than a dbt provider on purpose. It keeps
+The dbt step is a BashOperator rather than a dbt provider on purpose. It keeps
 the dependency surface to dbt itself and makes the command reproducible outside
-Airflow, which matters when you are debugging a model at 2am.
+Airflow, which matters when you are debugging a model at 2am. It also lets dbt
+run from a separate virtualenv, which it has to: dbt-core and Airflow 2.10 pin
+incompatible protobuf versions.
 """
 
 from __future__ import annotations
@@ -22,6 +24,9 @@ from airflow.operators.python import PythonOperator
 
 PROJECT_ROOT = os.environ.get("CDQ_ROOT", "/opt/airflow/project")
 DBT_DIR = os.path.join(PROJECT_ROOT, "dbt")
+# dbt cannot share Airflow's Python environment (protobuf pins conflict, see
+# Dockerfile), so the image installs it in its own virtualenv and points here.
+DBT_BIN = os.environ.get("CDQ_DBT_BIN", "dbt")
 
 DEFAULT_ARGS = {
     "owner": "data-platform",
@@ -99,7 +104,7 @@ with DAG(
 
     dbt_build = BashOperator(
         task_id="dbt_build",
-        bash_command=f"cd {DBT_DIR} && dbt build --no-use-colors",
+        bash_command=f"cd {DBT_DIR} && {DBT_BIN} build --no-use-colors",
         env={"DBT_PROFILES_DIR": DBT_DIR, **os.environ},
     )
 

@@ -158,8 +158,13 @@ That brings up Postgres for Airflow's metadata, runs the migrations once, then
 starts the webserver and scheduler on `LocalExecutor`. The project's Python
 dependencies are baked into a small image extending the official Airflow one
 (`Dockerfile`), so a broken dependency fails the build rather than the
-scheduler. CI builds that image and runs `tests/test_dag.py` inside it to check
-the DAG parses and chains the seven stages in order.
+scheduler. It found one straight away: dbt-core 1.12 needs `protobuf >= 6` and
+Airflow 2.10's OpenTelemetry exporter needs `protobuf < 5`, so they cannot share
+an environment. dbt lives in its own virtualenv inside the image and the DAG's
+`BashOperator` calls that binary (`CDQ_DBT_BIN`), which is one of the reasons
+the dbt step is a plain shell command rather than a provider. CI builds the
+image, runs `dbt --version` from that virtualenv, and runs `tests/test_dag.py`
+inside the image to check the DAG parses and chains the seven stages in order.
 
 ## How it is put together
 
