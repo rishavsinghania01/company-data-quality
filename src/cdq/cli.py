@@ -12,13 +12,14 @@ import sys
 
 from .config import Settings
 from .ingest import build_sources, load_raw
-from .pipeline import build_quality_report, normalise_records, resolve_entities
+from .pipeline import build_quality_report, evaluate_resolution, normalise_records, resolve_entities
 
 STAGES = {
     "generate": lambda s: build_sources(s),
     "load-raw": lambda s: load_raw(s),
     "normalise": lambda s: {"rows": normalise_records(s)},
     "resolve": lambda s: resolve_entities(s),
+    "evaluate": lambda s: evaluate_resolution(s),
     "quality": lambda s: {"scorecard": build_quality_report(s)},
 }
 

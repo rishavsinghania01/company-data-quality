@@ -19,6 +19,10 @@ RAW_SOURCES = {
     "registry_extract": "registry_extract.csv",
 }
 
+# Labels for the evaluate stage: record_id -> the entity it really belongs to.
+# Optional, because a real source only has this if someone labelled it.
+GROUND_TRUTH_FILE = "ground_truth.csv"
+
 
 def build_sources(settings: Settings) -> dict[str, int]:
     crosswalk = NaicsCrosswalk.from_csv(settings.crosswalk_path)
@@ -56,6 +60,20 @@ def load_raw(settings: Settings) -> dict[str, int]:
         counts["naics_crosswalk"] = connection.execute(
             "SELECT count(*) FROM raw.naics_crosswalk"
         ).fetchone()[0]
+
+        connection.execute("DROP TABLE IF EXISTS raw.ground_truth")
+        truth_path = Path(settings.raw_dir) / GROUND_TRUTH_FILE
+        if truth_path.exists():
+            connection.execute(
+                f"""
+                CREATE TABLE raw.ground_truth AS
+                SELECT record_id, CAST(entity_no AS INTEGER) AS entity_no
+                FROM read_csv_auto('{truth_path.as_posix()}', header=true, all_varchar=true)
+                """
+            )
+            counts["ground_truth"] = connection.execute(
+                "SELECT count(*) FROM raw.ground_truth"
+            ).fetchone()[0]
     finally:
         connection.close()
     return counts

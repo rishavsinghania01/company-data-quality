@@ -93,7 +93,16 @@ def generate(
     seed: int = 20260916,
     entity_count: int = 2000,
 ) -> dict[str, int]:
-    """Write crm_export.csv and registry_extract.csv. Returns row counts."""
+    """Write crm_export.csv, registry_extract.csv and ground_truth.csv.
+
+    The ground truth file maps every emitted record id to the entity it was
+    generated from. It is what the evaluate stage scores the resolver against,
+    and it is written as a separate file on purpose: the pipeline never reads
+    it, so the resolver cannot cheat, and a real source can supply its own
+    labelled file in the same shape.
+
+    Returns row counts.
+    """
     rng = random.Random(seed)
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -114,6 +123,7 @@ def generate(
 
     crm_rows = []
     registry_rows = []
+    truth: dict[str, int] = {}
 
     for entity in entities:
         in_crm = rng.random() < 0.80
@@ -122,6 +132,7 @@ def generate(
             in_crm = True
 
         if in_crm:
+            truth[f"CRM{entity['entity_no']:05d}"] = entity["entity_no"]
             crm_rows.append(
                 {
                     "crm_id": f"CRM{entity['entity_no']:05d}",
@@ -134,6 +145,7 @@ def generate(
                 }
             )
         if in_registry:
+            truth[f"REG{entity['entity_no']:05d}"] = entity["entity_no"]
             registry_rows.append(
                 {
                     "filing_id": f"REG{entity['entity_no']:05d}",
@@ -157,14 +169,25 @@ def generate(
     for row in rng.sample(registry_rows, k=max(1, len(registry_rows) // 10)):
         duplicate = dict(row)
         duplicate["filing_id"] = row["filing_id"].replace("REG", "RGX")
+        truth[duplicate["filing_id"]] = truth[row["filing_id"]]
         registry_rows.append(duplicate)
 
     rng.shuffle(crm_rows)
     rng.shuffle(registry_rows)
 
+    truth_rows = [
+        {"record_id": record_id, "entity_no": entity_no}
+        for record_id, entity_no in sorted(truth.items())
+    ]
+
     _write_csv(out_dir / "crm_export.csv", crm_rows)
     _write_csv(out_dir / "registry_extract.csv", registry_rows)
-    return {"crm_export": len(crm_rows), "registry_extract": len(registry_rows)}
+    _write_csv(out_dir / "ground_truth.csv", truth_rows)
+    return {
+        "crm_export": len(crm_rows),
+        "registry_extract": len(registry_rows),
+        "ground_truth": len(truth_rows),
+    }
 
 
 def _write_csv(path: Path, rows: list[dict]) -> None:

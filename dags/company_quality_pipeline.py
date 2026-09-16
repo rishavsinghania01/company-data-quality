@@ -1,8 +1,9 @@
 """Daily company data quality pipeline.
 
-Six tasks in a line: build the source extracts, land them raw, normalise the
-fields, resolve entities, build the warehouse models with dbt, then run the
-dbt tests. The Python stages call the same functions the CLI calls, so a local
+Seven tasks in a line: build the source extracts, land them raw, normalise the
+fields, resolve entities, score the resolution against the labelled truth,
+build and test the warehouse models with dbt, then publish the quality
+report. The Python stages call the same functions the CLI calls, so a local
 `make run` and a scheduled run execute identical code.
 
 The dbt steps are BashOperator rather than a dbt provider on purpose. It keeps
@@ -39,7 +40,12 @@ def _stage(name: str):
         sys.path.insert(0, os.path.join(PROJECT_ROOT, "src"))
         from cdq.config import Settings
         from cdq.ingest import build_sources, load_raw
-        from cdq.pipeline import build_quality_report, normalise_records, resolve_entities
+        from cdq.pipeline import (
+            build_quality_report,
+            evaluate_resolution,
+            normalise_records,
+            resolve_entities,
+        )
 
         settings = Settings.from_env()
         handlers = {
@@ -47,6 +53,7 @@ def _stage(name: str):
             "load_raw": load_raw,
             "normalise": normalise_records,
             "resolve": resolve_entities,
+            "evaluate": evaluate_resolution,
             "quality": build_quality_report,
         }
         return handlers[name](settings)
@@ -85,6 +92,11 @@ with DAG(
         python_callable=_stage("resolve"),
     )
 
+    evaluate_resolution_task = PythonOperator(
+        task_id="evaluate_resolution",
+        python_callable=_stage("evaluate"),
+    )
+
     dbt_build = BashOperator(
         task_id="dbt_build",
         bash_command=f"cd {DBT_DIR} && dbt build --no-use-colors",
@@ -101,6 +113,7 @@ with DAG(
         >> load_raw_tables
         >> normalise_fields
         >> resolve_entities_task
+        >> evaluate_resolution_task
         >> dbt_build
         >> quality_report
     )

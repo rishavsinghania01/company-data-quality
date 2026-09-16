@@ -49,6 +49,13 @@ jobs:
               "phone numbers too short":         (q("select count(*) from intermediate.normalised_records where phone_status = 'too_short'"), 526),
               "phone numbers missing":           (q("select count(*) from intermediate.normalised_records where phone_status = 'empty'"), 137),
               "dim_company rows":                (q("select count(*) from main_final.dim_company"), 2028),
+              "true companies in ground truth":  (q("select true_entities from quality.resolution_accuracy"), 2000),
+              "resolution precision":            (q("select precision from quality.resolution_accuracy"), 1.0),
+              "resolution recall":               (q("select recall from quality.resolution_accuracy"), 0.9787),
+              "resolution F1":                   (q("select f1 from quality.resolution_accuracy"), 0.9892),
+              "false merges":                    (q("select false_positive_pairs from quality.resolution_accuracy"), 0),
+              "missed pairs":                    (q("select false_negative_pairs from quality.resolution_accuracy"), 32),
+              "sweep rows":                      (q("select count(*) from quality.resolution_threshold_sweep"), 8),
           }
           bad = {k: v for k, v in expected.items() if v[0] != v[1]}
           for k, (got, want) in expected.items():
