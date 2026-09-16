@@ -21,8 +21,8 @@ From 3,380 source records across the two systems:
 
 | Metric | Value |
 |---|---|
-| Distinct companies after resolution | 2,292 |
-| Clusters holding more than one record | 1,001 |
+| Distinct companies after resolution | 2,028 |
+| Clusters holding more than one record | 1,232 |
 | Largest cluster | 3 records |
 | NAICS codes remapped from 2012 to 2022 | 471 |
 | NAICS codes not found in either vintage | 139 |

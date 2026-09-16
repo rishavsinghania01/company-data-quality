@@ -11,6 +11,13 @@ from cdq.normalise import normalise_address, normalise_name, normalise_phone
         ("  Acmé  Widgets & Co., Inc. ", "ACME WIDGETS"),
         ("Acme Widgets Private Limited", "ACME WIDGETS"),
         ("Northwind Traders", "NORTHWIND TRADERS"),
+        # Dotted abbreviations. Before the fix these came out as "L L C" and
+        # "P L C", which matched no suffix, so "Acme Widgets L.L.C." and
+        # "Acme Widgets LLC" were two different canonical names.
+        ("Acme Widgets L.L.C.", "ACME WIDGETS"),
+        ("Acme Widgets L.L.C", "ACME WIDGETS"),
+        ("Contoso P.L.C.", "CONTOSO"),
+        ("I.B.M. Services", "IBM SERVICES"),
     ],
 )
 def test_name_variants_fold_to_one_canonical_form(raw, expected):
@@ -19,6 +26,16 @@ def test_name_variants_fold_to_one_canonical_form(raw, expected):
 
 def test_name_keeps_the_suffix_it_removed():
     assert normalise_name("Acme Widgets LLC").suffix == "LLC"
+
+
+def test_dotted_suffix_is_recognised_as_the_same_suffix():
+    assert normalise_name("Acme Widgets L.L.C.").suffix == "LLC"
+
+
+def test_single_letter_words_that_are_not_an_abbreviation_are_left_alone():
+    # One letter on its own is not a run, so it is not joined to anything.
+    assert normalise_name("A One Cleaning").canonical == "A ONE CLEANING"
+    assert normalise_name("Plan B Bakery").canonical == "PLAN B BAKERY"
 
 
 def test_blank_name_is_flagged_not_dropped():

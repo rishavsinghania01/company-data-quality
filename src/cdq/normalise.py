@@ -54,6 +54,10 @@ STREET_ABBREVIATIONS = {
 
 _PUNCT = re.compile(r"[^A-Z0-9&\s]")
 _WS = re.compile(r"\s+")
+# A dotted abbreviation such as "L.L.C." or "I.B.M." comes out of punctuation
+# stripping as "L L C" - a run of single-letter tokens. Joined back into one
+# token so that the suffix list and the token-set comparison both see "LLC".
+_SPACED_LETTERS = re.compile(r"\b[A-Z](?: [A-Z])+\b")
 _EXTENSION = re.compile(r"(?:EXT|X|EXTENSION)\.?\s*(\d{1,6})\s*$", re.IGNORECASE)
 
 
@@ -97,6 +101,7 @@ def normalise_name(raw: str | None) -> NormalisedName:
     value = value.replace("&", " AND ")
     value = _PUNCT.sub(" ", value)
     value = _WS.sub(" ", value).strip()
+    value = _SPACED_LETTERS.sub(lambda match: match.group(0).replace(" ", ""), value)
 
     removed: str | None = None
     changed = True
