@@ -10,7 +10,7 @@
 
 -- Tracks how a resolved company changes between runs. Useful when a source
 -- system is reloaded and a name or industry code moves, because the history
--- shows when it changed rather than only that it is different now.
+-- shows when it changed.
 
 select
     company_key,

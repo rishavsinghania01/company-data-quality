@@ -91,8 +91,8 @@ def normalise_name(raw: str | None) -> NormalisedName:
 
     Case, accents, punctuation and legal suffixes all vary between source
     systems for the same underlying company, so all four are removed. The
-    suffix that was stripped is returned rather than discarded because it is
-    weak evidence when two candidates are otherwise identical.
+    suffix that was stripped is returned too, because it is weak evidence
+    when two candidates are otherwise identical.
     """
     if raw is None or not raw.strip():
         return NormalisedName("", None, "empty")

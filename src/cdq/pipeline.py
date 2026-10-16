@@ -14,8 +14,8 @@ from .naics import NaicsCrosswalk
 from .normalise import normalise_address, normalise_name, normalise_phone
 from .warehouse import connect
 
-# Thresholds the evaluate stage sweeps so the chosen one can be defended with
-# a curve rather than a shrug.
+# Thresholds the evaluate stage sweeps, so the chosen one comes with the
+# precision and recall at each neighbouring value.
 SWEEP_THRESHOLDS = (0.60, 0.65, 0.70, 0.75, 0.80, 0.85, 0.90, 0.95)
 
 SOURCE_COLUMNS = {
@@ -174,8 +174,7 @@ def evaluate_resolution(settings: Settings) -> dict[str, object]:
                                  SWEEP_THRESHOLDS, which is the curve the
                                  configured value was chosen from
       resolution_errors          every missed pair and false merge, with both
-                                 raw names, so a miss can be read rather than
-                                 counted
+                                 raw names, so each miss can be read
 
     Skipped, with the tables left empty, when there is no ground truth. A real
     source has labels only if someone sat down and made them.

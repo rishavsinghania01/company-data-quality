@@ -1,6 +1,6 @@
 -- One row per source record with the normalised fields attached.
--- Everything downstream reads this rather than the raw tables, so the cast and
--- the cleaning rules live in exactly one place.
+-- Everything downstream reads this model and never the raw tables, so the
+-- cast and the cleaning rules live in exactly one place.
 
 with normalised as (
 

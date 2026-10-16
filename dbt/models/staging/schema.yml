@@ -18,7 +18,7 @@ models:
       - name: naics_candidates
         description: >
           Comma separated 2022 codes when naics_status is ambiguous_split,
-          otherwise null. Present so a reviewer can pick, not so the model can.
+          otherwise null. A reviewer picks one; the model never does.
 
   - name: stg_naics_crosswalk
     description: >

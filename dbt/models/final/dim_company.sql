@@ -1,7 +1,7 @@
 -- One row per resolved company.
 --
--- The surviving values are chosen by a documented rule rather than by
--- whichever row the database happened to return: the registry extract wins on
+-- The surviving values follow a written rule, so the result never depends on
+-- which row the database happens to return first. The registry extract wins on
 -- legal name because it comes from filings, and the most complete record wins
 -- on contact fields. Anyone auditing a merge can read this and know why.
 

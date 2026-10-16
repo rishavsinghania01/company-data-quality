@@ -1,8 +1,8 @@
 """Scoring the resolver against labelled data.
 
-Entity resolution is judged on pairs of records, not on records. Two records
-that belong to the same real company form a true pair; two records the
-resolver put in the same cluster form a predicted pair. Precision is the share
+Entity resolution is judged on pairs of records. Two records that belong to
+the same real company form a true pair; two records the resolver put in the
+same cluster form a predicted pair. Precision is the share
 of predicted pairs that are true, recall is the share of true pairs that were
 predicted, and every merge mistake shows up as one or the other:
 
@@ -113,7 +113,7 @@ def pairwise_metrics(truth: dict[str, object], predicted: dict[str, str]) -> Res
 
 
 def pair_errors(truth: dict[str, object], predicted: dict[str, str]) -> list[PairError]:
-    """Every wrong pair, named, so that a miss can be looked at rather than counted.
+    """Every wrong pair with both records named, so each miss can be inspected.
 
     Missed pairs are enumerated inside true entities and false merges inside
     predicted clusters, so the cost is proportional to the group sizes rather

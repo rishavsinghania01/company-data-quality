@@ -2,7 +2,7 @@
 
 Raw tables are loaded as text with no casting. Anything that parses the value
 belongs downstream, so that a bad value shows up as a failed test in staging
-rather than as a load error with no record of what arrived.
+with the original text still there to read.
 """
 
 from __future__ import annotations
